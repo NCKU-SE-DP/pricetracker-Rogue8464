@@ -487,17 +487,17 @@ def upvote_article(
     return {"message": message}
 
 
-def toggle_news_upvoted_status(n_id, u_id, db):
+def toggle_news_upvoted_status(news_id, u_id, db):
     existing_upvote = db.execute(
         select(user_news_association_table).where(
-            user_news_association_table.c.news_articles_id == n_id,
+            user_news_association_table.c.news_articles_id == news_id,
             user_news_association_table.c.user_id == u_id,
         )
     ).scalar()
 
     if existing_upvote:
         delete_stmt = delete(user_news_association_table).where(
-            user_news_association_table.c.news_articles_id == n_id,
+            user_news_association_table.c.news_articles_id == news_id,
             user_news_association_table.c.user_id == u_id,
         )
         db.execute(delete_stmt)
@@ -505,7 +505,7 @@ def toggle_news_upvoted_status(n_id, u_id, db):
         return "Upvote removed"
     else:
         insert_stmt = insert(user_news_association_table).values(
-            news_articles_id=n_id, user_id=u_id
+            news_articles_id=news_id, user_id=u_id
         )
         db.execute(insert_stmt)
         db.commit()
