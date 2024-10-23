@@ -481,9 +481,9 @@ async def get_news_summary(
 def upvote_article(
         id,
         db=Depends(session_opener),
-        u=Depends(authenticate_user_token),
+        user=Depends(authenticate_user_token),
 ):
-    message = toggle_news_upvoted_status(id, u.id, db)
+    message = toggle_news_upvoted_status(id, user.id, db)
     return {"message": message}
 
 
