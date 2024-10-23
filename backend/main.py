@@ -168,8 +168,8 @@ def get_news_info_by_search_term(search_term, is_initial=False):
             response = requests.get("https://udn.com/api/more", params=p2)
             news_data.append(response.json()["lists"])
 
-        for l in news_data:
-            all_news_data.append(l)
+        for news in news_data:
+            all_news_data.append(news)
     else:
         p = {
             "page": 1,
