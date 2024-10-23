@@ -171,13 +171,13 @@ def get_news_info_by_search_term(search_term, is_initial=False):
         for news in news_data:
             all_news_data.append(news)
     else:
-        p = {
+        params = {
             "page": 1,
             "id": f"search:{quote(search_term)}",
             "channelId": 2,
             "type": "searchword",
         }
-        response = requests.get("https://udn.com/api/more", params=p)
+        response = requests.get("https://udn.com/api/more", params=params)
 
         all_news_data = response.json()["lists"]
     return all_news_data
