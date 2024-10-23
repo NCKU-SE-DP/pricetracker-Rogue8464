@@ -259,7 +259,7 @@ def shutdown_scheduler():
     bgs.shutdown()
 
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/users/login")
 
 
@@ -273,7 +273,7 @@ def session_opener():
 
 
 def verify_hashed_password(p1, p2):
-    return pwd_context.verify(p1, p2)
+    return password_context.verify(p1, p2)
 
 
 def check_user_password_is_correct(db, n, pwd):
@@ -321,7 +321,7 @@ class UserAuthSchema(BaseModel):
 @app.post("/api/v1/users/register")
 def create_user(user: UserAuthSchema, db: Session = Depends(session_opener)):
     """create user"""
-    hashed_password = pwd_context.hash(user.password)
+    hashed_password = password_context.hash(user.password)
     db_user = User(username=user.username, hashed_password=hashed_password)
     db.add(db_user)
     db.commit()
