@@ -1,0 +1,1 @@
+PRICE_API_URL = "https://opendata.ey.gov.tw/api/ConsumerProtection/NecessitiesPrice"
