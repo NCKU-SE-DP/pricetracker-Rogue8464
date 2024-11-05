@@ -10,13 +10,11 @@ from src.user.config import password_context
 def verify_hashed_password(p1, p2):
     return password_context.verify(p1, p2)
 
-
 def check_user_password_is_correct(db, user_input, password):
     user = db.query(User).filter(User.username == user_input).first()
     if not verify_hashed_password(password, user.hashed_password):
         return False
     return user
-
 
 def authenticate_user_token(
     token = Depends(oauth2_scheme),
@@ -25,9 +23,7 @@ def authenticate_user_token(
     payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ENCRYPTION_ALGORITHM])
     return db.query(User).filter(User.username == payload.get("sub")).first()
 
-
 def create_access_token(data, expires_delta=None):
-    """create access token"""
     to_encode = data.copy()
     if expires_delta:
         expire = datetime.utcnow() + expires_delta

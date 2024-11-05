@@ -13,15 +13,8 @@ from src.config import OPENAI_API_KEY, OPENAI_MODEL
 
 router = APIRouter()
 
-
 @router.get("/news")
 def get_all_news_from_database(db=Depends(session_opener)):
-    """
-    read new
-
-    :param db:
-    :return:
-    """
     news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     result = []
     for n in news:
@@ -36,13 +29,6 @@ def get_user_upvoted_news(
         db=Depends(session_opener),
         u=Depends(authenticate_user_token)
 ):
-    """
-    read user new
-
-    :param db:
-    :param u:
-    :return:
-    """
     news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     result = []
     for article in news:
@@ -106,16 +92,15 @@ async def search_news(request: PromptRequest):
         messages=message_content,
     )
     keywords = completion.choices[0].message.content
-    # should change into simple factory pattern
+    # todo: should change into simple factory pattern
     news_items = get_news_info_by_search_term(keywords, is_initial=False)
     for news in news_items:
         try:
             response = requests.get(news["titleLink"])
             soup = BeautifulSoup(response.text, "html.parser")
-            # 標題
             title = soup.find("h1", class_="article-content__title").text
             time = soup.find("time", class_="article-content__time").text
-            # 定位到包含文章内容的 <section>
+            # 擷取文章的主要內容
             content_section = soup.find("section", class_="article-content__editor")
 
             paragraphs = [
