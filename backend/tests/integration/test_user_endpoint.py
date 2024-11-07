@@ -2,10 +2,10 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
-from main import app
-from main import Base, User, session_opener
+from backend.src.main import app
+from backend.src.main import Base, User, session_opener
 from jose import jwt
-from main import pwd_context
+from backend.src.main import pwd_context
 
 SECRET_KEY = "1892dhianiandowqd0n"
 ALGORITHM = "HS256"
@@ -74,7 +74,7 @@ def test_login_for_access_token(test_user):
     assert response.status_code == 200
     data = response.json()
     assert "access_token" in data
-    assert data["token_type"] == "bearer"
+    assert data["TOKEN_TYPE"] == "bearer"
 
 
 def test_read_users_me(test_token):
