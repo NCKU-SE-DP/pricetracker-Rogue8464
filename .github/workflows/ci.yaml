@@ -40,7 +40,7 @@ jobs:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
         run: |
           cd backend
-          python -m pytest tests/integration
+          python -m pytest tests/integration --cov=src --cov-report=xml --disable-warnings
 
       - name: Upload coverage report
         uses: actions/upload-artifact@v3
