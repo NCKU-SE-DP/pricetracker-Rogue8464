@@ -2,10 +2,11 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, StaticPool
 from sqlalchemy.orm import sessionmaker
-from backend.src.main import app
-from backend.src.main import Base, User, session_opener
+from src.database import Base, session_opener
+from src.user.model import User
 from jose import jwt
-from backend.src.main import pwd_context
+from src.user.config import password_context
+from src.main import app
 
 SECRET_KEY = "1892dhianiandowqd0n"
 ALGORITHM = "HS256"
@@ -38,7 +39,7 @@ def clear_users():
 
 @pytest.fixture(scope="module")
 def test_user(clear_users):
-    hashed_password = pwd_context.hash("testpassword")
+    hashed_password = password_context.hash("testpassword")
 
     with next(override_session_opener()) as db:
         user = User(username="testuser", hashed_password=hashed_password)
@@ -55,7 +56,7 @@ def test_token(test_user):
 
 
 def test_register_user():
-    response = client.post("/api/v1/users/register", json={
+    response = client.post("/api/v1/user/register", json={
         "username": "newuser",
         "password": "newpassword"
     })
@@ -66,7 +67,7 @@ def test_register_user():
 
 
 def test_login_for_access_token(test_user):
-    response = client.post("/api/v1/users/login", data={
+    response = client.post("/api/v1/user/login", data={
         "username": "testuser",
         "password": "testpassword"
     })
@@ -79,7 +80,7 @@ def test_login_for_access_token(test_user):
 
 def test_read_users_me(test_token):
     headers = {"Authorization": f"Bearer {test_token}"}
-    response = client.get("/api/v1/users/me", headers=headers)
+    response = client.get("/api/v1/user/me", headers=headers)
 
     assert response.status_code == 200
     data = response.json()
