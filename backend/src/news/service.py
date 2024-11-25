@@ -8,37 +8,20 @@ from sqlalchemy import delete, insert, select
 from src.news.model import NewsArticle, user_news_association_table
 from src.config import OPENAI_API_KEY, OPENAI_MODEL, UDN_NEWS_API_URL
 from src.news.config import CHANNEL_ID
+from src.crawler.udn_crawler import UDNCrawler
+
+crawler = UDNCrawler
 
 def add_news_to_database(news_data):
     session = Session()
-    session.add(NewsArticle(
-        url=news_data["url"],
-        title=news_data["title"],
-        time=news_data["time"],
-        content=" ".join(news_data["content"]),  # 將文章內容轉換為字串
-        summary=news_data["summary"],
-        reason=news_data["reason"],
-    ))
-    session.commit()
-    session.close()
+    crawler.save(news_data,session)
 
 def get_news_info_by_search_term(search_term, is_initial=False):
     all_news_data = []
     # 若為初始載入，遍歷頁面以獲取多頁新聞資料，實際上不會載入全部新聞
     if is_initial:
-        news_data = []
-        for page in range(1, 10):
-            params = {
-                "page": page,
-                "id": f"search:{quote(search_term)}",
-                "channelId": CHANNEL_ID,
-                "type": "searchword",
-            }
-            response = requests.get(UDN_NEWS_API_URL, params=params)
-            news_data.append(response.json()["lists"])
-
-        for news in news_data:
-            all_news_data.append(news)
+        crawler = UDNCrawler()
+        all_news_data = crawler.get_headline(search_term,(1,10))
     else:
         params = {
             "page": 1,
@@ -68,24 +51,7 @@ def get_news_article(is_initial=False):
         )
         relevance = ai.choices[0].message.content
         if relevance == "high":
-            response = requests.get(news["titleLink"])
-            soup = BeautifulSoup(response.text, "html.parser")
-            title = soup.find("h1", class_="article-content__title").text
-            time = soup.find("time", class_="article-content__time").text
-            # 擷取文章的主要內容
-            content_section = soup.find("section", class_="article-content__editor")
-
-            paragraphs = [
-                p.text
-                for p in content_section.find_all("p")
-                if p.text.strip() != "" and "▪" not in p.text
-            ]
-            detailed_news =  {
-                "url": news["titleLink"],
-                "title": title,
-                "time": time,
-                "content": paragraphs,
-            }
+            detailed_news = crawler.parse(news["titleLink"])
             message_content = [
                 {
                     "role": "system",
