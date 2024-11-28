@@ -9,9 +9,11 @@ from src.news.router import router as news_router
 from src.user.router import router as user_router
 from src.price.router import router as price_router
 from src.config import SENTRY_DSN, TRACES_SAMPLE_RATE, PROFILES_SAMPLE_RATE
+from src.crawler.udn_crawler import UDNCrawler
 
 app = FastAPI()
 bgs = BackgroundScheduler()
+crawler = UDNCrawler()
 
 sentry_sdk.init(
     dsn=SENTRY_DSN,
@@ -32,7 +34,7 @@ def start_scheduler():
     db = SessionLocal()
     if db.query(NewsArticle).count() == 0:
         # should change into simple factory pattern
-        get_news_article()
+        crawler.startup("價格")
     db.close()
     bgs.add_job(get_news_article, "interval", minutes=100)
     bgs.start()
