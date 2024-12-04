@@ -8,7 +8,7 @@ class OPENAIClient(LLMClientBase):
         self.api_key = openai_api_key
         self.model = openai_model
 
-    def _perform_request(self,message_content) -> dict:
+    def _perform_request(self,message_content) -> str:
         response = OpenAI(api_key=self.api_key).chat.completions.create(
             model=self.model,
             messages=message_content,
