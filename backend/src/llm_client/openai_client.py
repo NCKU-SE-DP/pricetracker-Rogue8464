@@ -18,8 +18,11 @@ class OPENAIClient(LLMClientBase):
 
     def _create_message_content(self,system_role,user_content):
         message_content = [
-            MessagePassingInterfaceExample(role="system", content=system_role),
-            MessagePassingInterfaceExample(role="user", content=f"{user_content}"),
+            {
+                "role": "system",
+                "content": system_role,
+            },
+            {"role": "user", "content": user_content},
         ]
         return message_content
 
