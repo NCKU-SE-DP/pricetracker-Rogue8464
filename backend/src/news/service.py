@@ -42,7 +42,7 @@ def get_news_article(is_initial=False):
         relevance = openaiclient.evaluate_relevance(title)
         if relevance == "high":
             detailed_news = crawler.parse(news["titleLink"])
-            news_summary = openaiclient.sum_up_news(detailed_news)
+            news_summary = openaiclient.sum_up_news(" ".join(detailed_news["content"]))
             add_news_to_database(news_summary)
 
 def get_news_exist_status(news_id, db: Session):
