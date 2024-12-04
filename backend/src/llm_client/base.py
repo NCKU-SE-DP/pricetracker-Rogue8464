@@ -2,17 +2,9 @@ import abc
 from src.crawler.exceptions import DomainMismatchException
 from pydantic import BaseModel, Field
 
-class MessagePassingInterfaceExample(BaseModel):
-    role: str = Field(
-        default=...,
-        example="example",
-        description="description"
-    )
-    content: str = Field(
-        default=...,
-        example="example",
-        description="description"
-    )
+class Message(BaseModel):
+    role: str = Field(..., example="user", description="The role of the sender (system, user, assistant)")
+    content: str = Field(..., example="Hello, how can I help you?", description="The content of the message")
 
 class LLMClientBase(metaclass=abc.ABCMeta):
     

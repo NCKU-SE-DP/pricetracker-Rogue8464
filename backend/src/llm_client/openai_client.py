@@ -1,5 +1,5 @@
 from openai import OpenAI
-from src.llm_client.base import LLMClientBase, MessagePassingInterfaceExample
+from src.llm_client.base import LLMClientBase, Message
 import json
 
 class OPENAIClient(LLMClientBase):
@@ -17,13 +17,9 @@ class OPENAIClient(LLMClientBase):
         return result
 
     def _create_message_content(self,system_role,user_content):
-        message_content = [
-            {
-                "role": "system",
-                "content": system_role,
-            },
-            {"role": "user", "content": user_content},
-        ]
+        system_message = Message(role="system", content=system_role)
+        user_message = Message(role="user", content=user_content)
+        message_content = [system_message.dict(), user_message.dict()]
         return message_content
 
     def sum_up_news(self,content) -> dict:
