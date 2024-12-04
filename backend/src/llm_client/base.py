@@ -8,7 +8,11 @@ class MessagePassingInterfaceExample(BaseModel):
         example="example",
         description="description"
     )
-    content: str
+    content: str = Field(
+        default=...,
+        example="example",
+        description="description"
+    )
 
 class LLMClientBase(metaclass=abc.ABCMeta):
     
