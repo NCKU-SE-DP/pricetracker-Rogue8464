@@ -1,18 +1,15 @@
 from sqlalchemy.orm import Session
 from urllib.parse import quote
 import requests
-from openai import OpenAI
-from bs4 import BeautifulSoup
-import json
 from sqlalchemy import delete, insert, select
 from src.news.model import NewsArticle, user_news_association_table
-from src.config import OPENAI_API_KEY, OPENAI_MODEL, UDN_NEWS_API_URL
+from src.config import UDN_NEWS_API_URL
 from src.news.config import CHANNEL_ID
 from src.crawler.udn_crawler import UDNCrawler
 from src.llm_client.openai_client import OPENAIClient
 
 crawler = UDNCrawler()
-openaiclient = OPENAIClient(OPENAI_API_KEY,OPENAI_MODEL)
+openaiclient = OPENAIClient()
 
 def add_news_to_database(news_data):
     session = Session()
