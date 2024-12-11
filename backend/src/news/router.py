@@ -91,7 +91,7 @@ async def search_news(request: PromptRequest):
             print(e)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
-@router.post("/api/v1/news/news_summary_custom_model")
+@router.post("/news_summary_custom_model")
 async def get_news_summary_custom_model(
     payload: NewsSumaryCustomModelSchema
 ):
