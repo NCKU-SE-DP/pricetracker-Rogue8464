@@ -9,8 +9,10 @@ from src.news.model import NewsArticle, user_news_association_table
 from src.config import OPENAI_API_KEY, OPENAI_MODEL, UDN_NEWS_API_URL
 from src.news.config import CHANNEL_ID
 from src.crawler.udn_crawler import UDNCrawler
+from src.llm_client.openai_client import OPENAIClient
 
-crawler = UDNCrawler
+crawler = UDNCrawler()
+openaiclient = OPENAIClient(OPENAI_API_KEY,OPENAI_MODEL)
 
 def add_news_to_database(news_data):
     session = Session()
@@ -20,7 +22,6 @@ def get_news_info_by_search_term(search_term, is_initial=False):
     all_news_data = []
     # 若為初始載入，遍歷頁面以獲取多頁新聞資料，實際上不會載入全部新聞
     if is_initial:
-        crawler = UDNCrawler()
         all_news_data = crawler.get_headline(search_term,(1,10))
     else:
         params = {
@@ -38,37 +39,11 @@ def get_news_article(is_initial=False):
     news_data = get_news_info_by_search_term("價格", is_initial=is_initial)
     for news in news_data:
         title = news["title"]
-        message_content = [
-            {
-                "role": "system",
-                "content": "你是一個關聯度評估機器人，請評估新聞標題是否與「民生用品的價格變化」相關，並給予'high'、'medium'、'low'評價。(僅需回答'high'、'medium'、'low'三個詞之一)",
-            },
-            {"role": "user", "content": f"{title}"},
-        ]
-        ai = OpenAI(api_key=OPENAI_API_KEY).chat.completions.create(
-            model=OPENAI_MODEL,
-            messages=message_content,
-        )
-        relevance = ai.choices[0].message.content
+        relevance = openaiclient.evaluate_relevance(title)
         if relevance == "high":
             detailed_news = crawler.parse(news["titleLink"])
-            message_content = [
-                {
-                    "role": "system",
-                    "content": "你是一個新聞摘要生成機器人，請統整新聞中提及的影響及主要原因 (影響、原因各50個字，請以json格式回答 {'影響': '...', '原因': '...'})",
-                },
-                {"role": "user", "content": " ".join(detailed_news["content"])},
-            ]
-
-            completion = OpenAI(api_key=OPENAI_API_KEY).chat.completions.create(
-                model=OPENAI_MODEL,
-                messages=message_content,
-            )
-            result = completion.choices[0].message.content
-            result = json.loads(result)
-            detailed_news["summary"] = result["影響"]
-            detailed_news["reason"] = result["原因"]
-            add_news_to_database(detailed_news)
+            news_summary = openaiclient.sum_up_news(" ".join(detailed_news["content"]))
+            add_news_to_database(news_summary)
 
 def get_news_exist_status(news_id, db: Session):
     return db.query(NewsArticle).filter_by(id=news_id).first() is not None

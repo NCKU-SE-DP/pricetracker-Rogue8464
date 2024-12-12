@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
       - 'develop'
-      - 'refactor/crawler-oop-implementation'
+      - 'refactor/llm_client'
   pull_request:
     branches:
       - 'main'
