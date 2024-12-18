@@ -2,6 +2,7 @@ import abc
 import json
 from src.crawler.exceptions import DomainMismatchException
 from pydantic import BaseModel, Field
+from src.logger_config import logger
 
 class Message(BaseModel):
     role: str = Field(..., example="user", description="The role of the sender (system, user, assistant)")
@@ -36,11 +37,15 @@ class LLMClientTemplate(LLMClientBase,abc.ABC):
         pass
 
     def _perform_request(self,message_content) -> str:
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=message_content,
-        )
-        result = response.choices[0].message.content
+        try:
+            response = self.client.chat.completions.create(
+                model=self.model,
+                messages=message_content,
+            )
+            result = response.choices[0].message.content
+        except Exception as e:
+            logger.error(f"Error happened during perfroming LLM request:{e}",exc_info=True)
+            result = None
         return result
 
     def _create_message_content(self,system_role,user_content):
@@ -55,9 +60,13 @@ class LLMClientTemplate(LLMClientBase,abc.ABC):
         message_content = self._create_message_content(system_role,content)
         result = self._perform_request(message_content)
         if result:
-            result = json.loads(result)
-            response["summary"] = result["影響"]
-            response["reason"] = result["原因"]
+            try:
+                result = json.loads(result)
+                response["summary"] = result["影響"]
+                response["reason"] = result["原因"]
+            except Exception as e:
+                response = None
+                logger.error(f"Error happened during processing news summary:{e}",exc_info=True)
         return response
     
     def extract_keywords(self,prompt) -> str:

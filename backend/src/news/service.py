@@ -4,9 +4,10 @@ import requests
 from sqlalchemy import delete, insert, select
 from src.news.model import NewsArticle, user_news_association_table
 from src.config import UDN_NEWS_API_URL
-from src.news.config import CHANNEL_ID
+from src.news.config import CHANNEL_ID, TIMEOUT
 from src.crawler.udn_crawler import UDNCrawler
 from src.llm_client.openai_client import OPENAIClient
+from src.logger_config import logger
 
 crawler = UDNCrawler()
 openaiclient = OPENAIClient()
@@ -27,9 +28,16 @@ def get_news_info_by_search_term(search_term, is_initial=False):
             "channelId": CHANNEL_ID,
             "type": "searchword",
         }
-        response = requests.get(UDN_NEWS_API_URL, params=params)
-
-        all_news_data = response.json()["lists"]
+        try:
+            response = requests.get(UDN_NEWS_API_URL, params=params, timeout=TIMEOUT)
+        except requests.exceptions.Timeout as timeout_error:
+            logger.error(f"Timeout error:{timeout_error}",exc_info=True)
+            return None
+        try:
+            all_news_data = response.json()["lists"]
+        except Exception as e:
+            logger.error(f"Error happened during parsing response json:{e}",exc_info=True)
+            all_news_data = None
     return all_news_data
 
 def get_news_article(is_initial=False):
@@ -58,16 +66,24 @@ def toggle_news_upvoted_status(news_id, user_id, db):
             user_news_association_table.c.news_articles_id == news_id,
             user_news_association_table.c.user_id == user_id,
         )
-        db.execute(delete_stmt)
-        db.commit()
-        return "Upvote removed"
+        try:
+            db.execute(delete_stmt)
+            db.commit()
+            return "Upvote removed"
+        except Exception as e:
+            logger.error(f"Error happened during database executing:{e}",exc_info=True)
+            return None
     else:
         insert_stmt = insert(user_news_association_table).values(
             news_articles_id=news_id, user_id=user_id
         )
-        db.execute(insert_stmt)
-        db.commit()
-        return "Article upvoted"
+        try:
+            db.execute(insert_stmt)
+            db.commit()
+            return "Article upvoted"
+        except Exception as e:
+            logger.error(f"Error happened during database executing:{e}",exc_info=True)
+            return None
     
 def get_article_upvote_details(article_id, user_id, db):
     count = (
@@ -78,9 +94,9 @@ def get_article_upvote_details(article_id, user_id, db):
     voted = False
     if user_id:
         voted = (
-                db.query(user_news_association_table)
-                .filter_by(news_articles_id=article_id, user_id=user_id)
-                .first()
-                is not None
+            db.query(user_news_association_table)
+            .filter_by(news_articles_id=article_id, user_id=user_id)
+            .first()
+            is not None
         )
     return count, voted

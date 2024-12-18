@@ -9,19 +9,27 @@ from src.news.schema import NewsSumaryRequestSchema, PromptRequest, NewsSumaryCu
 from src.news.config import _id_counter
 from src.llm_client.openai_client import OPENAIClient
 from src.llm_client.anthropic_client import ANTHROPICClient
+from src.logger_config import logger
 
 router = APIRouter()
 openaiclient = OPENAIClient()
 
 @router.get("/news")
 def get_all_news_from_database(db=Depends(session_opener)):
-    news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
+    try:
+        news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
+    except Exception as e:
+        logger.error(f"Error happened during fetching news from database:{e}",exc_info=True)
+        return None
     result = []
     for n in news:
-        upvotes, upvoted = get_article_upvote_details(n.id, None, db)
-        result.append(
-            {**n.__dict__, "upvotes": upvotes, "is_upvoted": upvoted}
-        )
+        try:
+            upvotes, upvoted = get_article_upvote_details(n.id, None, db)
+            result.append(
+                {**n.__dict__, "upvotes": upvotes, "is_upvoted": upvoted}
+            )
+        except Exception as e:
+            logger.error(f"Error happened during fetching news upvote details:{e}",exc_info=True)
     return result
 
 @router.get("/user_news")
@@ -29,17 +37,24 @@ def get_user_upvoted_news(
         db=Depends(session_opener),
         u=Depends(authenticate_user_token)
 ):
-    news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
+    try:
+        news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
+    except Exception as e:
+        logger.error(f"Error happened during fetching news from database:{e}",exc_info=True)
+        return None
     result = []
     for article in news:
-        upvotes, upvoted = get_article_upvote_details(article.id, u.id, db)
-        result.append(
-            {
-                **article.__dict__,
-                "upvotes": upvotes,
-                "is_upvoted": upvoted,
-            }
-        )
+        try:
+            upvotes, upvoted = get_article_upvote_details(article.id, u.id, db)
+            result.append(
+                {
+                    **article.__dict__,
+                    "upvotes": upvotes,
+                    "is_upvoted": upvoted,
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error happened during fetching news upvote details:{e}",exc_info=True)
     return result
 
 @router.post("/news_summary")
@@ -55,15 +70,23 @@ def upvote_article(
         db=Depends(session_opener),
         user=Depends(authenticate_user_token),
 ):
-    message = toggle_news_upvoted_status(id, user.id, db)
+    try:
+        message = toggle_news_upvoted_status(id, user.id, db)
+    except Exception as e:
+        logger.error(f"Error happened during toggle news upvoted status:{e}",exc_info=True)
+        message = None
     return {"message": message}
 
 @router.post("/search_news")
 async def search_news(request: PromptRequest):
     news_list = []
-    keywords = openaiclient.extract_keywords(request.prompt)
-    # todo: should change into simple factory pattern
-    news_items = get_news_info_by_search_term(keywords, is_initial=False)
+    try:
+        keywords = openaiclient.extract_keywords(request.prompt)
+        # todo: should change into simple factory pattern
+        news_items = get_news_info_by_search_term(keywords, is_initial=False)
+    except Exception as e:
+        logger.error(f"Error happened during searching news:{e}",exc_info=True)
+        return None
     for news in news_items:
         try:
             response = requests.get(news["titleLink"])
@@ -88,7 +111,7 @@ async def search_news(request: PromptRequest):
             detailed_news["id"] = next(_id_counter)
             news_list.append(detailed_news)
         except Exception as e:
-            print(e)
+            logger.error(f"Error happened during parsing news:{e}",exc_info=True)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 @router.post("/news_summary_custom_model")

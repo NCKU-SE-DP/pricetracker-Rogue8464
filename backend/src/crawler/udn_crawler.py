@@ -40,6 +40,7 @@ from src.config import UDN_NEWS_API_URL
 from src.crawler.crawler_base import NewsCrawlerBase, Headline, News, NewsWithSummary
 from urllib.parse import quote
 import requests
+from src.logger_config import logger
 
 class UDNCrawler(NewsCrawlerBase):
 
@@ -84,7 +85,11 @@ class UDNCrawler(NewsCrawlerBase):
         return params
 
     def _perform_request(self, url: str | None = None, params: dict | None = None) -> Response:
-        response = requests.get(url, params=params)
+        try:
+            response = requests.get(url, params=params)
+        except Exception as e:
+            logger.error(f"Error happened during performing news api requests:{e}",exc_info=True)
+            response = None
         return response
 
     @staticmethod
@@ -98,7 +103,11 @@ class UDNCrawler(NewsCrawlerBase):
 
     def parse(self, url: str) -> News:
         response = self._perform_request(url)
-        soup = BeautifulSoup(response.text, "html.parser")
+        try:
+            soup = BeautifulSoup(response.text, "html.parser")
+        except Exception as e:
+            logger.error(f"Error happened during parsing news:{e}",exc_info=True)
+            return None
         title,time,content_section = self._extract_news(soup)
         paragraphs = self._parse_headlines(content_section)
         detailed_news =  {
@@ -110,9 +119,21 @@ class UDNCrawler(NewsCrawlerBase):
         return detailed_news
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
-        title = soup.find("h1", class_="article-content__title").text
-        time = soup.find("time", class_="article-content__time").text
-        content_section = soup.find("section", class_="article-content__editor")
+        try:
+            title = soup.find("h1", class_="article-content__title").text
+        except Exception as e:
+            title = "無法取得標題"
+            logger.error(f"Unable to fetch news title:{e}",exc_info=True,)
+        try:
+            time = soup.find("time", class_="article-content__time").text
+        except Exception as e:
+            time = "無法取得時間"
+            logger.error(f"Unable to fetch news time:{e}",exc_info=True,)
+        try:
+            content_section = soup.find("section", class_="article-content__editor")
+        except Exception as e:
+            content_section = "無法取得內文"
+            logger.error(f"Unable to fetch news content:{e}",exc_info=True,)
         return title,time,content_section
 
     def save(self, news: NewsWithSummary, db: Session):
@@ -124,5 +145,5 @@ class UDNCrawler(NewsCrawlerBase):
     def _commit_changes(db: Session):
         try:
             db.commit()
-        except Exception as error:
-            print(f"error: {error}")
+        except Exception as e:
+            logger.error(f"Error:{e}",exc_info=True,)
