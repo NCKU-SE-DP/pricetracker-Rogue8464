@@ -1,19 +1,17 @@
 from fastapi import APIRouter, Depends
-import json
 import requests
 from bs4 import BeautifulSoup
-from openai import OpenAI
 from src.database import session_opener
 from src.news.model import NewsArticle
 from src.news.service import get_article_upvote_details, toggle_news_upvoted_status, get_news_info_by_search_term
 from src.user.service import authenticate_user_token
-from src.news.schema import NewsSumaryRequestSchema, PromptRequest
+from src.news.schema import NewsSumaryRequestSchema, PromptRequest, NewsSumaryCustomModelSchema
 from src.news.config import _id_counter
-from src.config import OPENAI_API_KEY, OPENAI_MODEL
 from src.llm_client.openai_client import OPENAIClient
+from src.llm_client.anthropic_client import ANTHROPICClient
 
 router = APIRouter()
-openaiclient = OPENAIClient(openai_api_key=OPENAI_API_KEY,openai_model=OPENAI_MODEL)
+openaiclient = OPENAIClient()
 
 @router.get("/news")
 def get_all_news_from_database(db=Depends(session_opener)):
@@ -92,3 +90,16 @@ async def search_news(request: PromptRequest):
         except Exception as e:
             print(e)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
+
+@router.post("/news_summary_custom_model")
+async def get_news_summary_custom_model(
+    payload: NewsSumaryCustomModelSchema
+):
+    if(payload.model == "openai"):
+        llm_client = OPENAIClient()
+    elif(payload.model == "anthropic"):
+        llm_client = ANTHROPICClient()
+    else:
+        return "Invalid Client!"
+    response = llm_client.sum_up_news(payload.content)
+    return response

@@ -5,7 +5,7 @@ on:
     branches:
       - 'main'
       - 'develop'
-      - 'refactor/llm_client'
+      - 'refactor/llm-client-template-methods-pattern'
   pull_request:
     branches:
       - 'main'
