@@ -3,8 +3,6 @@ from urllib.parse import quote
 import requests
 from sqlalchemy import delete, insert, select
 from src.news.model import NewsArticle, user_news_association_table
-from src.config import UDN_NEWS_API_URL
-from src.news.config import CHANNEL_ID, TIMEOUT
 from src.crawler.udn_crawler import UDNCrawler
 from src.llm_client.openai_client import OPENAIClient
 from src.logger_config import logger
@@ -22,19 +20,9 @@ def get_news_info_by_search_term(search_term, is_initial=False):
     if is_initial:
         all_news_data = crawler.get_headline(search_term,(1,10))
     else:
-        params = {
-            "page": 1,
-            "id": f"search:{quote(search_term)}",
-            "channelId": CHANNEL_ID,
-            "type": "searchword",
-        }
+        all_news_data = crawler.get_headline(search_term,1)
         try:
-            response = requests.get(UDN_NEWS_API_URL, params=params, timeout=TIMEOUT)
-        except requests.exceptions.Timeout as timeout_error:
-            logger.error(f"Timeout error:{timeout_error}",exc_info=True)
-            return None
-        try:
-            all_news_data = response.json()["lists"]
+            all_news_data = all_news_data.json()["lists"]
         except Exception as e:
             logger.error(f"Error happened during parsing response json:{e}",exc_info=True)
             all_news_data = None
@@ -43,10 +31,10 @@ def get_news_info_by_search_term(search_term, is_initial=False):
 def get_news_article(is_initial=False):
     news_data = get_news_info_by_search_term("價格", is_initial=is_initial)
     for news in news_data:
-        title = news["title"]
+        title = news.title
         relevance = openaiclient.evaluate_relevance(title)
         if relevance == "high":
-            detailed_news = crawler.parse(news["titleLink"])
+            detailed_news = crawler.parse(news.url)
             news_summary = openaiclient.sum_up_news(" ".join(detailed_news["content"]))
             add_news_to_database(news_summary)
 

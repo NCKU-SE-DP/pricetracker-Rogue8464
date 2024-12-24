@@ -117,6 +117,7 @@ class UDNCrawler(NewsCrawlerBase):
             "content": paragraphs,
         }
         return detailed_news
+    
     @staticmethod
     def _extract_news(soup: BeautifulSoup, url: str) -> News:
         try:
