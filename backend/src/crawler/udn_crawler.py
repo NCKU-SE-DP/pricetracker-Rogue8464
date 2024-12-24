@@ -119,7 +119,7 @@ class UDNCrawler(NewsCrawlerBase):
         return detailed_news
     
     @staticmethod
-    def _extract_news(soup: BeautifulSoup, url: str) -> News:
+    def _extract_news(soup: BeautifulSoup) -> News:
         try:
             title = soup.find("h1", class_="article-content__title").text
         except Exception as e:
