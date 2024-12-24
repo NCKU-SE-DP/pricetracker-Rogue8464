@@ -1,5 +1,6 @@
 import abc
 import json
+import aisuite as ai
 from src.crawler.exceptions import DomainMismatchException
 from pydantic import BaseModel, Field
 from src.logger_config import logger
@@ -27,8 +28,7 @@ class LLMClientBase(metaclass=abc.ABCMeta):
 
 class LLMClientTemplate(LLMClientBase,abc.ABC):
     def __init__(self):
-        self._api_key = None
-        self.client = None
+        self.client = ai.Client()
         self.model = None
         self._initialize_client()
 
@@ -62,8 +62,8 @@ class LLMClientTemplate(LLMClientBase,abc.ABC):
         if result:
             try:
                 result = json.loads(result)
-                response["summary"] = result["影響"]
-                response["reason"] = result["原因"]
+                response["summary"] = result['影響']
+                response["reason"] = result['原因']
             except Exception as e:
                 response = None
                 logger.error(f"Error happened during processing news summary:{e}",exc_info=True)
