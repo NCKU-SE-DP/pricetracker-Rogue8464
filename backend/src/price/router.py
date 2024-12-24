@@ -18,7 +18,7 @@ def get_necessities_prices(
         return response.json()
     except requests.exceptions.Timeout as timeout_error:
         logger.error(f"Timeout error:{timeout_error}",exc_info=True)
-        return None
+        raise
     except Exception as e:
         logger.error(f"Error happened during price api request:{e}",exc_info=True)
-        return None
+        raise

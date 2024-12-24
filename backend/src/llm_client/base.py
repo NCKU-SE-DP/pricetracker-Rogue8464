@@ -45,7 +45,7 @@ class LLMClientTemplate(LLMClientBase,abc.ABC):
             result = response.choices[0].message.content
         except Exception as e:
             logger.error(f"Error happened during perfroming LLM request:{e}",exc_info=True)
-            result = None
+            raise
         return result
 
     def _create_message_content(self,system_role,user_content):
@@ -65,8 +65,8 @@ class LLMClientTemplate(LLMClientBase,abc.ABC):
                 response["summary"] = result['影響']
                 response["reason"] = result['原因']
             except Exception as e:
-                response = None
                 logger.error(f"Error happened during processing news summary:{e}",exc_info=True)
+                raise
         return response
     
     def extract_keywords(self,prompt) -> str:

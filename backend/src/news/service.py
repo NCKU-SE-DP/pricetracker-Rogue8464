@@ -25,7 +25,7 @@ def get_news_info_by_search_term(search_term, is_initial=False):
             all_news_data = all_news_data.json()["lists"]
         except Exception as e:
             logger.error(f"Error happened during parsing response json:{e}",exc_info=True)
-            all_news_data = None
+            raise
     return all_news_data
 
 def get_news_article(is_initial=False):
@@ -60,7 +60,7 @@ def toggle_news_upvoted_status(news_id, user_id, db):
             return "Upvote removed"
         except Exception as e:
             logger.error(f"Error happened during database executing:{e}",exc_info=True)
-            return None
+            raise
     else:
         insert_stmt = insert(user_news_association_table).values(
             news_articles_id=news_id, user_id=user_id
@@ -71,7 +71,7 @@ def toggle_news_upvoted_status(news_id, user_id, db):
             return "Article upvoted"
         except Exception as e:
             logger.error(f"Error happened during database executing:{e}",exc_info=True)
-            return None
+            raise
     
 def get_article_upvote_details(article_id, user_id, db):
     count = (

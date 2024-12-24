@@ -20,7 +20,7 @@ def get_all_news_from_database(db=Depends(session_opener)):
         news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     except Exception as e:
         logger.error(f"Error happened during fetching news from database:{e}",exc_info=True)
-        return None
+        raise
     result = []
     for n in news:
         try:
@@ -29,7 +29,7 @@ def get_all_news_from_database(db=Depends(session_opener)):
                 {**n.__dict__, "upvotes": upvotes, "is_upvoted": upvoted}
             )
         except Exception as e:
-            logger.error(f"Error happened during fetching news upvote details:{e}",exc_info=True)
+            logger.warning(f"Error happened during fetching news upvote details:{e}",exc_info=True)
     return result
 
 @router.get("/user_news")
@@ -41,7 +41,7 @@ def get_user_upvoted_news(
         news = db.query(NewsArticle).order_by(NewsArticle.time.desc()).all()
     except Exception as e:
         logger.error(f"Error happened during fetching news from database:{e}",exc_info=True)
-        return None
+        raise
     result = []
     for article in news:
         try:
@@ -54,7 +54,7 @@ def get_user_upvoted_news(
                 }
             )
         except Exception as e:
-            logger.error(f"Error happened during fetching news upvote details:{e}",exc_info=True)
+            logger.warning(f"Error happened during fetching news upvote details:{e}",exc_info=True)
     return result
 
 @router.post("/news_summary")
@@ -74,19 +74,15 @@ def upvote_article(
         message = toggle_news_upvoted_status(id, user.id, db)
     except Exception as e:
         logger.error(f"Error happened during toggle news upvoted status:{e}",exc_info=True)
-        message = None
+        raise
     return {"message": message}
 
 @router.post("/search_news")
 async def search_news(request: PromptRequest):
     news_list = []
-    try:
-        keywords = openaiclient.extract_keywords(request.prompt)
-        # todo: should change into simple factory pattern
-        news_items = get_news_info_by_search_term(keywords, is_initial=False)
-    except Exception as e:
-        logger.error(f"Error happened during searching news:{e}",exc_info=True)
-        return None
+    keywords = openaiclient.extract_keywords(request.prompt)
+    # todo: should change into simple factory pattern
+    news_items = get_news_info_by_search_term(keywords, is_initial=False)
     for news in news_items:
         try:
             response = requests.get(news["titleLink"])
@@ -111,7 +107,7 @@ async def search_news(request: PromptRequest):
             detailed_news["id"] = next(_id_counter)
             news_list.append(detailed_news)
         except Exception as e:
-            logger.error(f"Error happened during parsing news:{e}",exc_info=True)
+            logger.warning(f"Error happened during parsing news:{e}",exc_info=True)
     return sorted(news_list, key=lambda x: x["time"], reverse=True)
 
 @router.post("/news_summary_custom_model")

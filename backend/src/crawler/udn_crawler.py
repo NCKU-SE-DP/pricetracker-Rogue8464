@@ -89,7 +89,7 @@ class UDNCrawler(NewsCrawlerBase):
             response = requests.get(url, params=params)
         except Exception as e:
             logger.error(f"Error happened during performing news api requests:{e}",exc_info=True)
-            response = None
+            raise
         return response
 
     @staticmethod
@@ -107,7 +107,7 @@ class UDNCrawler(NewsCrawlerBase):
             soup = BeautifulSoup(response.text, "html.parser")
         except Exception as e:
             logger.error(f"Error happened during parsing news:{e}",exc_info=True)
-            return None
+            raise
         title,time,content_section = self._extract_news(soup)
         paragraphs = self._parse_headlines(content_section)
         detailed_news =  {
@@ -124,17 +124,17 @@ class UDNCrawler(NewsCrawlerBase):
             title = soup.find("h1", class_="article-content__title").text
         except Exception as e:
             title = "無法取得標題"
-            logger.error(f"Unable to fetch news title:{e}",exc_info=True,)
+            logger.warning(f"Unable to fetch news title:{e}",exc_info=True)
         try:
             time = soup.find("time", class_="article-content__time").text
         except Exception as e:
             time = "無法取得時間"
-            logger.error(f"Unable to fetch news time:{e}",exc_info=True,)
+            logger.warning(f"Unable to fetch news time:{e}",exc_info=True)
         try:
             content_section = soup.find("section", class_="article-content__editor")
         except Exception as e:
             content_section = "無法取得內文"
-            logger.error(f"Unable to fetch news content:{e}",exc_info=True,)
+            logger.warning(f"Unable to fetch news content:{e}",exc_info=True)
         return title,time,content_section
 
     def save(self, news: NewsWithSummary, db: Session):
@@ -147,4 +147,5 @@ class UDNCrawler(NewsCrawlerBase):
         try:
             db.commit()
         except Exception as e:
-            logger.error(f"Error:{e}",exc_info=True,)
+            logger.error(f"Error:{e}",exc_info=True)
+            raise
