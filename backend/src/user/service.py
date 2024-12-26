@@ -31,7 +31,7 @@ def authenticate_user_token(
         user_token = db.query(User).filter(User.username == payload.get("sub")).first()
     except Exception as e:
         logger.error(f"Error happened during authenticating user token:{e} ",exc_info=True)
-        user_token = None
+        raise
     return user_token
 
 def create_access_token(data, expires_delta=None):
@@ -46,5 +46,5 @@ def create_access_token(data, expires_delta=None):
         encoded_json_webtoken = jwt.encode(to_encode, JWT_SECRET_KEY, algorithm=JWT_ENCRYPTION_ALGORITHM)
     except Exception as e:
         logger.error(f"Error happened during creating access token:{e} ",exc_info=True)
-        encoded_json_webtoken = None
+        raise
     return encoded_json_webtoken

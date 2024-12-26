@@ -24,7 +24,7 @@ async def login_for_access_token(
         return {"access_token": access_token, "TOKEN_TYPE": TOKEN_TYPE}
     except Exception as e:
         logger.error(f"Error happened during creating access token:{e}",exc_info=True)
-        return None
+        raise
 
 @router.post("/register")
 def create_user(user: UserAuthSchema, db: Session = Depends(session_opener)):
@@ -33,13 +33,13 @@ def create_user(user: UserAuthSchema, db: Session = Depends(session_opener)):
         db_user = User(username=user.username, hashed_password=hashed_password)
     except Exception as e:
         logger.error(f"Error happened during creating new user:{e}",exc_info=True)
-        return None
+        raise
     try:
         db.add(db_user)
         db.commit()
     except Exception as e:
         logger.error(f"Error happened during adding new user to database:{e}",exc_info=True)
-        return None
+        raise
     db.refresh(db_user)
     return db_user
 
@@ -48,6 +48,6 @@ def read_users_me(user=Depends(authenticate_user_token)):
     try:
         username = {"username": user.username}
     except Exception as e:
-        logger.error(f"Error happened during loading username:{e} ",exc_info=True)
+        logger.warning(f"Error happened during loading username:{e} ",exc_info=True)
         username = {"username":"unable to load username"}
     return username

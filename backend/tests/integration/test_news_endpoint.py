@@ -7,7 +7,7 @@ from jose import jwt
 from src.database import Base, session_opener
 from src.news.model import user_news_association_table, NewsArticle
 from src.user.model import User
-from src.news.schema import NewsSumaryRequestSchema, PromptRequest
+from src.news.schema import NewsSumaryRequestSchema, PromptRequest, NewsSumaryCustomModelSchema
 from src.user.config import password_context
 from unittest.mock import Mock
 from src.main import app
@@ -162,6 +162,18 @@ def test_news_summary(mocker, test_token):
     assert json_response["summary"] == "test impact"
     assert json_response["reason"] == "test reason"
 
+def test_news_summary_custom_model(mocker, test_token):
+    headers = {"Authorization": f"Bearer {test_token}"}
+    openai_response = json.dumps({"影響": "test impact", "原因": "test reason"})
+    mock_openai(mocker, openai_response)
+
+    request_body = NewsSumaryCustomModelSchema(model="openai",content="Test news content")
+    response = client.post("/api/v1/news/news_summary_custom_model", json=request_body.dict(), headers=headers)
+
+    assert response.status_code == 200
+    json_response = response.json()
+    assert json_response["summary"] == "test impact"
+    assert json_response["reason"] == "test reason"
 
 def test_upvote_article(test_user_and_articles, test_token):
     user, articles = test_user_and_articles
